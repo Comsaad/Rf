@@ -551,7 +551,7 @@
         جميع الحقوق محفوظة © المتوسطة التاسعة والثانية تحفيظ القرآن الكريم بالدلم | إعداد وتصميم المعلمة: منيرة السعيدان
     </footer>
 
-    <!-- استدعاء مكتبات Firebase SDKs (نسخة الإصدار 9 عبر CDN) -->
+    <!-- استدعاء مكتبات Firebase SDKs (نسخة الإصدار 10 عبر CDN) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -821,7 +821,7 @@
                             </label>
                         `;
                     });
-                    html += `<button class="btn" style="padding: 6px 14px; font-size: 0.85rem; margin-top: 8px;" onclick="checkMCQ('${qKey}', ${unitNum}, ${index}, ${act.correct}, ${act.points})" ${isAnswered ? 'disabled' : ''}>تحقق من الإجابة</button>`;
+                    html += `<button class="btn" id="btn_${qKey}" style="padding: 6px 14px; font-size: 0.85rem; margin-top: 8px;" onclick="checkMCQ('${qKey}', ${unitNum}, ${index}, ${act.correct}, ${act.points})" ${isAnswered ? 'disabled' : ''}>تحقق من الإجابة</button>`;
                 } else if (act.type === "truefalse") {
                     const checkTrue = isAnswered && answeredQuestions[`${qKey}_sel`] === true ? 'checked' : '';
                     const checkFalse = isAnswered && answeredQuestions[`${qKey}_sel`] === false ? 'checked' : '';
@@ -829,7 +829,7 @@
                         <label style="margin-left: 20px; cursor:pointer;"><input type="radio" name="${qKey}" value="true" ${isAnswered ? 'disabled' : ''} ${checkTrue}> صح</label>
                         <label style="cursor:pointer;"><input type="radio" name="${qKey}" value="false" ${isAnswered ? 'disabled' : ''} ${checkFalse}> خطأ</label>
                         <br>
-                        <button class="btn" style="padding: 6px 14px; font-size: 0.85rem; margin-top: 10px;" onclick="checkTrueFalse('${qKey}', ${unitNum}, ${index}, ${act.correct}, ${act.points})" ${isAnswered ? 'disabled' : ''}>تحقق من الإجابة</button>
+                        <button class="btn" id="btn_${qKey}" style="padding: 6px 14px; font-size: 0.85rem; margin-top: 10px;" onclick="checkTrueFalse('${qKey}', ${unitNum}, ${index}, ${act.correct}, ${act.points})" ${isAnswered ? 'disabled' : ''}>تحقق من الإجابة</button>
                     `;
                 }
 
@@ -872,20 +872,22 @@
                 return;
             }
 
-            const feedbackDiv = document.getElementById(`feedback_${qKey}`);
+            // منع تكرار الضغط فوراً بتعطيل الخيارات وزر التحقق
             answeredQuestions[qKey] = true;
             answeredQuestions[`${qKey}_sel`] = selected;
+            lockQuestion(qKey);
+
+            const feedbackDiv = document.getElementById(`feedback_${qKey}`);
 
             if(selected === correctOpt) {
                 feedbackDiv.innerHTML = `<span class="correct">إجابة صحيحة وموفقة! أحسنتِ (+${actPoints} نقاط) 🌟</span>`;
                 answeredQuestions[`${qKey}_res`] = true;
                 addPoints(actPoints);
             } else {
-                feedbackDiv.innerHTML = `<span class="incorrect">إجابة غير دقيقة، حاولي مرة أخرى بدقة 💡</span>`;
+                feedbackDiv.innerHTML = `<span class="incorrect">إجابة غير دقيقة 💡</span>`;
                 answeredQuestions[`${qKey}_res`] = false;
             }
             
-            lockQuestion(qKey);
             saveStudentDataToFirebase();
         };
 
@@ -900,26 +902,30 @@
                 return;
             }
 
-            const feedbackDiv = document.getElementById(`feedback_${qKey}`);
+            // منع تكرار الضغط فوراً بتعطيل الخيارات وزر التحقق
             answeredQuestions[qKey] = true;
             answeredQuestions[`${qKey}_sel`] = selectedVal;
+            lockQuestion(qKey);
+
+            const feedbackDiv = document.getElementById(`feedback_${qKey}`);
 
             if(selectedVal === correctVal) {
                 feedbackDiv.innerHTML = `<span class="correct">إجابة صحيحة وموفقة! أحسنتِ (+${actPoints} نقاط) 🌟</span>`;
                 answeredQuestions[`${qKey}_res`] = true;
                 addPoints(actPoints);
             } else {
-                feedbackDiv.innerHTML = `<span class="incorrect">إجابة غير دقيقة، حاولي مرة أخرى بدقة 💡</span>`;
+                feedbackDiv.innerHTML = `<span class="incorrect">إجابة غير دقيقة 💡</span>`;
                 answeredQuestions[`${qKey}_res`] = false;
             }
             
-            lockQuestion(qKey);
             saveStudentDataToFirebase();
         };
 
         function lockQuestion(qKey) {
             const radios = document.getElementsByName(qKey);
             for(let i=0; i<radios.length; i++) radios[i].disabled = true;
+            const actionBtn = document.getElementById(`btn_${qKey}`);
+            if(actionBtn) actionBtn.disabled = true;
         }
 
         function addPoints(val) {
